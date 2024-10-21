@@ -1,16 +1,28 @@
-from mongoengine import Document, StringField, DateTimeField, ReferenceField, CASCADE
+from mongoengine import Document, StringField, DateTimeField, LazyReferenceField, CASCADE
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Customer(Document, UserMixin):
     email = StringField(max_length=100, unique=True, required=True)
     username = StringField(max_length=100, required=True)
     password_hash = StringField(max_length=150, required=True)
-    date_joined = DateTimeField(default=datetime.timezone.utc)
+    date_joined = DateTimeField(default=timezone.utc)
 
-    cart_items = ReferenceField('Cart', reverse_delete_rule=CASCADE)
-    orders = ReferenceField('Order', reverse_delete_rule=CASCADE)
+    # cart_items = LazyReferenceField('Cart', reverse_delete_rule=CASCADE)
+    # orders = LazyReferenceField('Order', reverse_delete_rule=CASCADE)
+    # Lazy import Cart saat dibutuhkan
+    @property
+    def cart_items(self):
+        from .cart import Cart
+        return LazyReferenceField(Cart, reverse_delete_rule=CASCADE)
+
+    # orders = LazyReferenceField('Order', reverse_delete_rule=CASCADE)
+    # Lazy import Order saat dibutuhkan
+    @property
+    def orders(self):
+        from .order import Order
+        return LazyReferenceField(Order, reverse_delete_rule=CASCADE)
 
     @property
     def password(self):
